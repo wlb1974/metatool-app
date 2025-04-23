@@ -14,6 +14,6 @@ export const config = {
     logResponseBody: process.env.LOG_RESPONSE_BODY === 'true',
     
     // 敏感字段，这些字段在日志中将被遮蔽
-    sensitiveFields: ['password', 'token', 'secret', 'api_key', 'apiKey'],
+    sensitiveFields: ['password', 'token', 'secret', 'api_key', 'apiKey', 'Authorization'],
   }
 }; 
