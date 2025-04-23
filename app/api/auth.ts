@@ -3,12 +3,14 @@ import { NextResponse } from 'next/server';
 
 import { db } from '@/db';
 import { apiKeysTable } from '@/db/schema';
+import { logger } from '@/lib/logger';
 
 import { getProjectActiveProfile } from '../actions/profiles';
 
 export async function authenticateApiKey(request: Request) {
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    logger.warn('Authentication failed: Missing or invalid authorization header');
     return {
       error: NextResponse.json(
         { error: 'Authorization header with Bearer token is required' },
@@ -25,6 +27,7 @@ export async function authenticateApiKey(request: Request) {
     .limit(1);
 
   if (apiKeyRecord.length === 0) {
+    logger.warn('Authentication failed: Invalid API key');
     return {
       error: NextResponse.json({ error: 'Invalid API key' }, { status: 401 }),
     };
@@ -34,6 +37,9 @@ export async function authenticateApiKey(request: Request) {
     apiKeyRecord[0].project_uuid
   );
   if (!activeProfile) {
+    logger.warn('Authentication failed: No active profile found', {
+      projectUuid: apiKeyRecord[0].project_uuid
+    });
     return {
       error: NextResponse.json(
         { error: 'No active profile found for this API key' },
@@ -41,6 +47,11 @@ export async function authenticateApiKey(request: Request) {
       ),
     };
   }
+
+  logger.info('Authentication successful', {
+    projectUuid: apiKeyRecord[0].project_uuid,
+    profileUuid: activeProfile.uuid
+  });
 
   return {
     success: true,

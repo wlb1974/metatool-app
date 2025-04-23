@@ -3,10 +3,11 @@ import { NextResponse } from 'next/server';
 
 import { db } from '@/db';
 import { mcpServersTable, McpServerStatus } from '@/db/schema';
+import { logger, withRequestLogger } from '@/lib/logger';
 
 import { authenticateApiKey } from '../auth';
 
-export async function GET(request: Request) {
+async function handleGet(request: Request) {
   try {
     const auth = await authenticateApiKey(request);
     if (auth.error) return auth.error;
@@ -20,9 +21,15 @@ export async function GET(request: Request) {
           eq(mcpServersTable.profile_uuid, auth.activeProfile.uuid)
         )
       );
+    
+    logger.info('MCP servers fetched successfully', {
+      profileUuid: auth.activeProfile.uuid,
+      count: activeMcpServers.length
+    });
+    
     return NextResponse.json(activeMcpServers);
   } catch (error) {
-    console.error(error);
+    logger.error('Failed to fetch active MCP servers', { error });
     return NextResponse.json(
       { error: 'Failed to fetch active MCP servers' },
       { status: 500 }
@@ -30,13 +37,18 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+async function handlePost(request: Request) {
   try {
     const auth = await authenticateApiKey(request);
     if (auth.error) return auth.error;
 
     const body = await request.json();
     const { uuid, name, description, command, args, env, status } = body;
+
+    logger.debug('Creating new MCP server', {
+      name,
+      profileUuid: auth.activeProfile.uuid
+    });
 
     const newMcpServer = await db
       .insert(mcpServersTable)
@@ -52,12 +64,21 @@ export async function POST(request: Request) {
       })
       .returning();
 
+    logger.info('MCP server created successfully', {
+      serverUuid: newMcpServer[0].uuid,
+      name: newMcpServer[0].name,
+      profileUuid: auth.activeProfile.uuid
+    });
+
     return NextResponse.json(newMcpServer[0]);
   } catch (error) {
-    console.error(error);
+    logger.error('Failed to create MCP server', { error });
     return NextResponse.json(
       { error: 'Failed to create MCP server' },
       { status: 500 }
     );
   }
 }
+
+export const GET = withRequestLogger(handleGet);
+export const POST = withRequestLogger(handlePost);

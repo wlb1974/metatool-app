@@ -7,10 +7,11 @@ import {
   customMcpServersTable,
   McpServerStatus,
 } from '@/db/schema';
+import { logger, withRequestLogger } from '@/lib/logger';
 
 import { authenticateApiKey } from '../auth';
 
-export async function GET(request: Request) {
+async function handleGet(request: Request) {
   try {
     const auth = await authenticateApiKey(request);
     if (auth.error) return auth.error;
@@ -45,9 +46,14 @@ export async function GET(request: Request) {
       )
       .orderBy(desc(customMcpServersTable.created_at));
 
+    logger.info('Custom MCP servers fetched successfully', {
+      profileUuid: auth.activeProfile.uuid,
+      count: customMcpServers.length
+    });
+
     return NextResponse.json(customMcpServers);
   } catch (error) {
-    console.error(error);
+    logger.error('Failed to fetch custom MCP servers', { error });
     return NextResponse.json(
       { error: 'Failed to fetch custom MCP servers' },
       { status: 500 }
@@ -55,13 +61,18 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+async function handlePost(request: Request) {
   try {
     const auth = await authenticateApiKey(request);
     if (auth.error) return auth.error;
 
     const body = await request.json();
     const { name, description, code_uuid, additionalArgs, env } = body;
+
+    logger.debug('Creating new custom MCP server', {
+      name,
+      profileUuid: auth.activeProfile.uuid
+    });
 
     const [newCustomMcpServer] = await db
       .insert(customMcpServersTable)
@@ -76,12 +87,21 @@ export async function POST(request: Request) {
       })
       .returning();
 
+    logger.info('Custom MCP server created successfully', {
+      serverUuid: newCustomMcpServer.uuid,
+      name: newCustomMcpServer.name,
+      profileUuid: auth.activeProfile.uuid
+    });
+
     return NextResponse.json(newCustomMcpServer);
   } catch (error) {
-    console.error(error);
+    logger.error('Failed to create custom MCP server', { error });
     return NextResponse.json(
       { error: 'Failed to create custom MCP server' },
       { status: 500 }
     );
   }
 }
+
+export const GET = withRequestLogger(handleGet);
+export const POST = withRequestLogger(handlePost);

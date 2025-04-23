@@ -13,6 +13,7 @@ A few feature highlights:
 - Support prompts, resources, tools under MCP.
 - Support multi-workspace: e.g., activate a workspace of DB1 or switch to DB2 in another workspace, preventing polluting context of DB1 to your MCP Client.
 - Tool level toggle on/off
+- Comprehensive logging system for API requests and responses
 
 The app is also self hostable, free and open source. There is also a cloud version. You can try how this app works using cloud version but I actually encourage you to self host if you are familiar with docker: it will provide unlimited access with lower latency, full private operations on your end.
 
@@ -68,6 +69,16 @@ npx -y @metamcp/mcp-server-metamcp@latest --metamcp-api-key <your-api-key> --met
 ```
 
 You can get the API key from the MetaMCP App's API Keys page (self hosted available).
+
+## Logging Configuration
+
+MetaMCP includes a comprehensive logging system that records API requests and responses. You can configure the logging behavior using the following environment variables:
+
+- `LOG_LEVEL`: Sets the minimum log level (`debug`, `info`, `warn`, `error`). Default: `info`
+- `LOG_REQUEST_BODY`: Enable/disable logging of request bodies (`true`, `false`). Default: `false`
+- `LOG_RESPONSE_BODY`: Enable/disable logging of response bodies (`true`, `false`). Default: `false`
+
+For production deployments, you may want to set `LOG_REQUEST_BODY=false` and `LOG_RESPONSE_BODY=false` to reduce log volume and prevent logging sensitive information.
 
 ## Architecture Overview
 
