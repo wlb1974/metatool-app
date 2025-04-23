@@ -88,7 +88,7 @@ async function handlePost(request: Request) {
       profileUuid: auth.activeProfile.uuid,
       mcpServerUuid: mcp_server_uuid,
       toolName: tool_name,
-      logUuid: newToolExecutionLog[0].uuid
+      logId: newToolExecutionLog[0].id
     });
 
     return NextResponse.json(newToolExecutionLog[0]);
